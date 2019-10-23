@@ -4908,40 +4908,62 @@ class WebappInternal(Base):
         # Last tests in 26.09 on Firefox
         act = ActionChains(self.driver)
         try:
-            ext = wait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//label[@title = \"Избранное \"]"))
+            try:
+                ext = wait(self.driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, "//label[@title = \"Избранное \"]"))
+                )
+            except:
+                ext = wait(self.driver, 10).until(
+                    EC.element_to_be_clickable((By.XPATH, "//label[@title = \"Недавние\"]"))
+                )
+            self.scroll_to_element(ext)
+            act.move_to_element(ext).perform()
+            self.click(ext, click_type = enum.ClickType.SELENIUM)
+            time.sleep(2)
+            act.key_down (Keys.LEFT_CONTROL)
+            time.sleep(2)
+            act.send_keys('q')
+            act.key_up (Keys.LEFT_CONTROL).perform()
+            
+            wait(self.driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, "//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label[contains(text(), \"Завершить\")]"))
             )
-            # ext = self.driver.find_element_by_xpath("//label[@title = \"Избранное \"]")
+            ext_window = wait(self.driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, "(//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label)[3]"))
+            )
+            self.wait_blocker_ajax()    # Before window, environment generates ajax blocker
+            ext_window = self.driver.find_elements_by_xpath ("//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label")
+            for e in ext_window:
+                if e.text == "Завершить":
+                    try:
+                        self.SetButton (self.FindButton ("msfinal", "STR0006"))     # Завершить
+                    except:
+                        self.log_error ("No such button in exit window")
+                else:
+                    self.log_error ("Exit window not found")
         except:
-            ext = wait(self.driver, 10).until(
-                EC.element_to_be_clickable((By.XPATH, "//label[@title = \"Недавние\"]"))
+            time.sleep(2)
+            act.key_down (Keys.LEFT_CONTROL)
+            time.sleep(2)
+            act.send_keys('q')
+            act.key_up (Keys.LEFT_CONTROL).perform()
+            
+            wait(self.driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, "//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label[contains(text(), \"Завершить\")]"))
             )
-            # ext = self.driver.find_element_by_xpath("//label[@title = \"Недавние\"]")
-        self.scroll_to_element(ext)
-        act.move_to_element(ext).perform()
-        self.click(ext, click_type = enum.ClickType.SELENIUM)
-        time.sleep(2)
-        act.key_down (Keys.LEFT_CONTROL)
-        time.sleep(2)
-        act.send_keys('q')
-        act.key_up (Keys.LEFT_CONTROL).perform()
-        
-        wait(self.driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, "//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label[contains(text(), \"Завершить\")]"))
-        )
-        ext_window = wait(self.driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, "(//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label)[3]"))
-        )
-        self.wait_blocker_ajax()    # Before window, environment generates ajax blocker
-        ext_window = self.driver.find_elements_by_xpath ("//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label")
-        for e in ext_window:
-            if e.text == "Завершить":
-                try:
-                    self.SetButton (self.FindButton ("msfinal", "STR0006"))     # Завершить
-                except:
-                    self.log_error ("No such button in exit window")
-            else:
-                self.log_error ("Exit window not found")
+            ext_window = wait(self.driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, "(//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label)[3]"))
+            )
+            self.wait_blocker_ajax()    # Before window, environment generates ajax blocker
+            ext_window = self.driver.find_elements_by_xpath ("//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label")
+            for e in ext_window:
+                if e.text == "Завершить":
+                    try:
+                        self.SetButton (self.FindButton ("msfinal", "STR0006"))     # Завершить
+                    except:
+                        self.log_error ("No such button in exit window")
+                else:
+                    self.log_error ("Exit window not found")
                 
         self.driver.close()
             
