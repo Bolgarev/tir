@@ -4684,6 +4684,19 @@ class WebappInternal(Base):
         db_inst = db_engine.connect()                       # connect with creds
 
         return db_engine, db_inst
+    
+    # BETA
+    def ElementWaiter(self, element_path):
+        element = wait(self.driver, 20).until(
+            EC.visibility_of_element_located((By.XPATH, "{}".format(element_path)))
+        )
+        if element:
+            action = ActionChains(self.driver)
+            self.wait_blocker_ajax()
+            element = self.driver.find_element_by_xpath("{}".format(element_path))
+            self.scroll_to_element(element)
+            action.move_to_element(element)
+            action.perform()
 
     def ClickLabel(self, label_name):
         """
@@ -4936,9 +4949,11 @@ class WebappInternal(Base):
                 EC.presence_of_element_located((By.XPATH, "//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label[contains(text(), \"Завершить\")]"))
             )
             ext_window = wait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "(//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label)[3]"))
+                EC.presence_of_element_located((By.XPATH, "(//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label)[1]"))
             )
             self.wait_blocker_ajax()    # Before window, environment generates ajax blocker
+            
+            # If we have windows content != "Завершить", nest egg for the future and smth
             ext_window = self.driver.find_elements_by_xpath ("//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label")
             for e in ext_window:
                 if e.text == "Завершить":
@@ -4946,8 +4961,9 @@ class WebappInternal(Base):
                         self.SetButton (self.FindButton ("msfinal", "STR0006"))     # Завершить
                     except:
                         self.log_error ("No such button in exit window")
-                else:
-                    self.log_error ("Exit window not found")
+                # elif e.text == "Выйти":
+                #     self.SetButton (self.FindButton ("msfinal", "STR0006"))     # If we have windows content != "Завершить"
+
         except:
             time.sleep(2)
             act.key_down (Keys.LEFT_CONTROL)
@@ -4959,7 +4975,7 @@ class WebappInternal(Base):
                 EC.presence_of_element_located((By.XPATH, "//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label[contains(text(), \"Завершить\")]"))
             )
             ext_window = wait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "(//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label)[3]"))
+                EC.presence_of_element_located((By.XPATH, "(//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label)[1]"))
             )
             self.wait_blocker_ajax()    # Before window, environment generates ajax blocker
             ext_window = self.driver.find_elements_by_xpath ("//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label")
@@ -4969,8 +4985,6 @@ class WebappInternal(Base):
                         self.SetButton (self.FindButton ("msfinal", "STR0006"))     # Завершить
                     except:
                         self.log_error ("No such button in exit window")
-                else:
-                    self.log_error ("Exit window not found")
                 
         self.driver.close()
             
