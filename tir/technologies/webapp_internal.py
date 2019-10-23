@@ -6,7 +6,9 @@ import os
 import random
 import uuid
 import codecs
+#_!_
 import sqlalchemy as db
+#_!_
 from functools import reduce
 from selenium.webdriver.common.keys import Keys
 from bs4 import BeautifulSoup
@@ -14,7 +16,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import Select
-from selenium.webdriver.support.ui import WebDriverWait as wait
+from selenium.webdriver.support.ui import WebDriverWait
 import tir.technologies.core.enumerations as enum
 from tir.technologies.core.log import Log
 from tir.technologies.core.config import ConfigLoader
@@ -69,7 +71,6 @@ class WebappInternal(Base):
         self.num_exec = NumExec()
         self.restart_counter = 0
         self.used_ids = {}
-        self.DB_engine, self.DB_instance = self.connect_DB()
 
         self.parameters = []
         self.backup_parameters = []
@@ -4417,7 +4418,7 @@ class WebappInternal(Base):
 
         routine_name = routine_name if routine_name else "error"
 
-        #self.log.save_file(routine_name)
+        self.log.save_file(routine_name)
 
         self.errors = []
         
@@ -4572,7 +4573,8 @@ class WebappInternal(Base):
         >>> oHelper.SearchBySearchBox("14/34", 2, 2)
         """
         if search_box_index and filter:
-            button = WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.XPATH, '(//div[@class=\"tpanel twidget dict-tpanel\"]/div[@class=\"tbutton twidget dict-tbutton\"]/button)[11]')))
+            self.wait_blocker_ajax()
+            button = WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.XPATH, '//div[@class=\"tpanel twidget dict-tpanel\"]/div[@class=\"tbutton twidget dict-tbutton\"]/button[contains(@style, \"rgb(245, 245, 245)\")]')))
             actions = ActionChains(self.driver)
             actions.move_to_element(button)
             self.click (button, click_type=enum.ClickType.SELENIUM)
@@ -4599,8 +4601,11 @@ class WebappInternal(Base):
                 enter.clear()
                 enter.send_keys(search_txt, Keys.ENTER)
 
-                icon = self.driver.find_element_by_xpath("//div[@class=\"tpanel twidget dict-tpanel\"]/div[contains(@class, \"tget twidget dict-tget\")]/img[@src=\"cache/ma3-appliance/fwskin_icon_lookup.png\"]")
-                actions.move_to_element(icon).send_keys_to_element(icon, Keys.ENTER).perform()
+                icon = self.driver.find_element_by_xpath("//div[@class=\"tpanel twidget dict-tpanel\"]/div[contains(@class, \"tget twidget dict-tget\")]/img[@style=\"top: 16.6667%;\"]")
+                actions = ActionChains(self.driver)
+                actions.move_to_element(icon)
+                actions.click()
+                actions.perform() 
         else:
             enter = WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.XPATH, ('//div[contains(@class, \"tget twidget dict-tget\")]/input[@class=\"placeHolder\"]')[0])))
             actions.move_to_element(enter)
@@ -4608,50 +4613,55 @@ class WebappInternal(Base):
             enter.clear()
             enter.send_keys(search_txt, Keys.ENTER)
 
-            icon = self.driver.find_element_by_xpath("//div[@class=\"tpanel twidget dict-tpanel\"]/div[contains(@class, \"tget twidget dict-tget\")]/img[@src=\"cache/ma3-appliance/fwskin_icon_lookup.png\"]")
-            actions.move_to_element(icon).send_keys_to_element(icon, Keys.ENTER).perform()        
+            icon = self.driver.find_element_by_xpath("//div[@class=\"tpanel twidget dict-tpanel\"]/div[contains(@class, \"tget twidget dict-tget\")]/img[@style=\"top: 16.6667%;\"]")
+            actions = ActionChains(self.driver)
+            actions.move_to_element(icon)
+            actions.click()
+            actions.perform()        
 
     def CheckValuesDB(self, table, field, value, dbg_print=0):
+        # table = nnr000, value = 22, field = NNR_CODIGO
         """
-        Function gets value from DB for comparing with recently created value by SetValue() in ma3-GUI testcase
+        Clicks 
 
-        :param table: Table from DB
-        :type table: str
-        :param field: Column from DB (in ma3 - field)
-        :type field: str
-        :param value: Value recently inserted in testcase (for search record in DB column)
-        :type value: str
-        :param dbg_print: Print in stdout founded record row by value from DB table? (1/0 = Y/N)
-        :type dbg_print: int
+        :param label_name: The label name
+        :type label_name: str
 
         Usage:
 
         >>> # Call the method:
-        >>> oHelper.CheckValuesDB(table="sb5000", field="B5_CEME", value='22', dbg_print=1)
+        >>> oHelper.ClickLabel("Search")
         """
+        username = self.config.DBusername   # json
+        password = self.config.DBpassword
+        ip = self.config.DBconnection
+        if not self.config.DBconnection:
+            username = "postgres"       
+            password = "12345678"
+            ip = "192.168.56.102"
+        
         new_list = []
         metadata = db.MetaData()                            # get poles, cells, etc...
-        column = field.lower()
 
-        engine = self.DB_engine                             # initialize connection to DB
-        instance = self.DB_instance
-
-        if instance: print('[SYS] Successfully connected to DB [{}]'.format(engine))
+        engine = db.create_engine(f'postgresql://{username}:{password}@{ip}/ma3-appliance')
+        connection = engine.connect()                       # connect with creds
+        if connection:print('[INFO] Successfully connected\n')
         table_init = db.Table(table, metadata, autoload=True, autoload_with=engine)
 
-        # instance.execute("select * from nnr000 where nnr_codigo = '22' order by nnr_filial, nnr_codigo;")  # RAW query
-        getDB_data = db.select([db.text("*"), table_init]).where(getattr(table_init.columns, column) == value)  # getattr (table_init.columns + column)
-        query_result = instance.execute(getDB_data)
+        # qw = connection.execute("select * from nnr000 where nnr_codigo = '22' order by nnr_filial, nnr_codigo;")
+        var = field.lower()
+        getDB_data = db.select([db.text("*"), table_init]).where(getattr(table_init.columns, var) == value)  # getattr (table_init.columns + var)
+        # +.order_by(table_init.columns.nnr_filial
+        qw = connection.execute(getDB_data)
 
         # make array from trashy execute result:
-        if query_result:
-            print('[SYS] DB query executed succesfully')
-            print("[INFO] Value {} from field {} founded in DB".format(value.split(), field))
-            query_result = query_result.fetchall()
+        if qw:
+            print("Value {} from field {} founded".format(value.split(), field))
+            qw = qw.fetchall()
             if dbg_print:
-                print(query_result)     # dbg print string from DBase
+                print(qw)     # dbg print string from DBase
         else:
-            print("[INFO] Value {} from field {} not found in DB".format(value.split(), field))
+            print("Value {} from field {} not found".format(value.split(), field))
 
         # Table of concordance (field[ex.] <-> table)
         #       NNR_CODIGO <-> nnr000
@@ -4661,22 +4671,8 @@ class WebappInternal(Base):
         #       H6_OPERAC <-> sn6000
         #       DB_LOCALIZ <-> sdb000
 
-    def connect_DB(self):
-        """
-        [Internal]
-        Function provides connection to database, return an instance for futher use
-
-        :return: [db_engine - connection credentials, db_inst - sqlalchemy instance/object of DB]
-        :rtype: [str, inst]
-        """
-        username = self.config.DBusername   # json
-        password = self.config.DBpassword
-        ip = self.config.DBconnection
-
-        db_engine = db.create_engine(f'postgresql://{username}:{password}@{ip}/ma3-appliance')
-        db_inst = db_engine.connect()                       # connect with creds
-
-        return db_engine, db_inst
+    def ConnectDB(self):
+        pass
 
     def ClickLabel(self, label_name):
         """
@@ -4889,7 +4885,7 @@ class WebappInternal(Base):
         Usage:
 
         >>> #Calling the method
-        >>> oHelper.TearDown()
+        >>> self.TearDown()
         """
         # if self.config.coverage:
 
@@ -4907,64 +4903,14 @@ class WebappInternal(Base):
         # Work variant, 99.9%
         # Last tests in 26.09 on Firefox
         act = ActionChains(self.driver)
-        try:
-            try:
-                ext = wait(self.driver, 10).until(
-                    EC.element_to_be_clickable((By.XPATH, "//label[@title = \"Избранное \"]"))
-                )
-            except:
-                ext = wait(self.driver, 10).until(
-                    EC.element_to_be_clickable((By.XPATH, "//label[@title = \"Недавние\"]"))
-                )
-            self.scroll_to_element(ext)
-            act.move_to_element(ext).perform()
-            self.click(ext, click_type = enum.ClickType.SELENIUM)
-            time.sleep(2)
-            act.key_down (Keys.LEFT_CONTROL)
-            time.sleep(2)
-            act.send_keys('q')
-            act.key_up (Keys.LEFT_CONTROL).perform()
-            
-            wait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label[contains(text(), \"Завершить\")]"))
-            )
-            ext_window = wait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "(//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label)[3]"))
-            )
-            self.wait_blocker_ajax()    # Before window, environment generates ajax blocker
-            ext_window = self.driver.find_elements_by_xpath ("//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label")
-            for e in ext_window:
-                if e.text == "Завершить":
-                    try:
-                        self.SetButton (self.FindButton ("msfinal", "STR0006"))     # Завершить
-                    except:
-                        self.log_error ("No such button in exit window")
-                else:
-                    self.log_error ("Exit window not found")
-        except:
-            time.sleep(2)
-            act.key_down (Keys.LEFT_CONTROL)
-            time.sleep(2)
-            act.send_keys('q')
-            act.key_up (Keys.LEFT_CONTROL).perform()
-            
-            wait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label[contains(text(), \"Завершить\")]"))
-            )
-            ext_window = wait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "(//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label)[3]"))
-            )
-            self.wait_blocker_ajax()    # Before window, environment generates ajax blocker
-            ext_window = self.driver.find_elements_by_xpath ("//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label")
-            for e in ext_window:
-                if e.text == "Завершить":
-                    try:
-                        self.SetButton (self.FindButton ("msfinal", "STR0006"))     # Завершить
-                    except:
-                        self.log_error ("No such button in exit window")
-                else:
-                    self.log_error ("Exit window not found")
-                
+        act.key_down (Keys.LEFT_CONTROL)
+        time.sleep(5)
+        act.send_keys('q')
+        act.key_up (Keys.LEFT_CONTROL)
+        act.perform()
+        time.sleep(5)
+        self.SetButton (self.FindButton ("msfinal", "STR0006"))     # Завершить
+        time.sleep(2)
         self.driver.close()
             
     def containers_filter(self, containers):
