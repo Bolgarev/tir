@@ -4417,7 +4417,7 @@ class WebappInternal(Base):
 
         routine_name = routine_name if routine_name else "error"
 
-        self.log.save_file(routine_name)
+        #self.log.save_file(routine_name)
 
         self.errors = []
         
@@ -4889,7 +4889,7 @@ class WebappInternal(Base):
         Usage:
 
         >>> #Calling the method
-        >>> self.TearDown()
+        >>> oHelper.TearDown()
         """
         # if self.config.coverage:
 
@@ -4908,10 +4908,17 @@ class WebappInternal(Base):
         # Last tests in 26.09 on Firefox
         act = ActionChains(self.driver)
         try:
-            ext = self.driver.find_element_by_xpath("//div[contains(@class, \"tget twidget dict-tget\")][@name = \"cGet\"]/input")
+            ext = wait(self.driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//label[@title = \"Избранное \"]"))
+            )
+            # ext = self.driver.find_element_by_xpath("//label[@title = \"Избранное \"]")
         except:
-            ext = self.driver.find_element_by_xpath("//label[@title = \"Избранное \"]")
-        act.move_to_element(ext)
+            ext = wait(self.driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//label[@title = \"Недавние\"]"))
+            )
+            # ext = self.driver.find_element_by_xpath("//label[@title = \"Недавние\"]")
+        self.scroll_to_element(ext)
+        act.move_to_element(ext).perform()
         self.click(ext, click_type = enum.ClickType.SELENIUM)
         time.sleep(2)
         act.key_down (Keys.LEFT_CONTROL)
@@ -4922,17 +4929,20 @@ class WebappInternal(Base):
         wait(self.driver, 10).until(
             EC.presence_of_element_located((By.XPATH, "//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label[contains(text(), \"Завершить\")]"))
         )
+        ext_window = wait(self.driver, 10).until(
+            EC.presence_of_element_located((By.XPATH, "(//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label)[3]"))
+        )
+        self.wait_blocker_ajax()    # Before window, environment generates ajax blocker
         ext_window = self.driver.find_elements_by_xpath ("//div[@class = \"tsay twidget dict-tsay align-left transparent\"]/label")
         for e in ext_window:
             if e.text == "Завершить":
                 try:
                     self.SetButton (self.FindButton ("msfinal", "STR0006"))     # Завершить
                 except:
-                    self.log_error ("Exit window not founded")
+                    self.log_error ("No such button in exit window")
             else:
-                continue
-        
-        time.sleep(1)
+                self.log_error ("Exit window not found")
+                
         self.driver.close()
             
     def containers_filter(self, containers):
