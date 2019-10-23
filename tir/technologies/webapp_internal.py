@@ -4572,7 +4572,8 @@ class WebappInternal(Base):
         >>> oHelper.SearchBySearchBox("14/34", 2, 2)
         """
         if search_box_index and filter:
-            button = WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.XPATH, '(//div[@class=\"tpanel twidget dict-tpanel\"]/div[@class=\"tbutton twidget dict-tbutton\"]/button)[11]')))
+            self.wait_blocker_ajax()
+            button = wait(self.driver, 15).until(EC.visibility_of_element_located((By.XPATH, '//div[@class=\"tpanel twidget dict-tpanel\"]/div[@class=\"tbutton twidget dict-tbutton\"]/button[contains(@style, \"rgb(245, 245, 245)\")]')))
             actions = ActionChains(self.driver)
             actions.move_to_element(button)
             self.click (button, click_type=enum.ClickType.SELENIUM)
@@ -4599,17 +4600,23 @@ class WebappInternal(Base):
                 enter.clear()
                 enter.send_keys(search_txt, Keys.ENTER)
 
-                icon = self.driver.find_element_by_xpath("//div[@class=\"tpanel twidget dict-tpanel\"]/div[contains(@class, \"tget twidget dict-tget\")]/img[@src=\"cache/ma3-appliance/fwskin_icon_lookup.png\"]")
-                actions.move_to_element(icon).send_keys_to_element(icon, Keys.ENTER).perform()
+                icon = self.driver.find_element_by_xpath("//div[@class=\"tpanel twidget dict-tpanel\"]/div[contains(@class, \"tget twidget dict-tget\")]/img[@style=\"top: 16.6667%;\"]")
+                actions = ActionChains(self.driver)
+                actions.move_to_element(icon)
+                actions.click()
+                actions.perform() 
         else:
-            enter = WebDriverWait(self.driver, 15).until(EC.visibility_of_element_located((By.XPATH, ('//div[contains(@class, \"tget twidget dict-tget\")]/input[@class=\"placeHolder\"]')[0])))
+            enter = wait(self.driver, 15).until(EC.visibility_of_element_located((By.XPATH, ('//div[contains(@class, \"tget twidget dict-tget\")]/input[@class=\"placeHolder\"]')[0])))
             actions.move_to_element(enter)
             self.click(enter, click_type=enum.ClickType.SELENIUM)
             enter.clear()
             enter.send_keys(search_txt, Keys.ENTER)
 
-            icon = self.driver.find_element_by_xpath("//div[@class=\"tpanel twidget dict-tpanel\"]/div[contains(@class, \"tget twidget dict-tget\")]/img[@src=\"cache/ma3-appliance/fwskin_icon_lookup.png\"]")
-            actions.move_to_element(icon).send_keys_to_element(icon, Keys.ENTER).perform()        
+            icon = self.driver.find_element_by_xpath("//div[@class=\"tpanel twidget dict-tpanel\"]/div[contains(@class, \"tget twidget dict-tget\")]/img[@style=\"top: 16.6667%;\"]")
+            actions = ActionChains(self.driver)
+            actions.move_to_element(icon)
+            actions.click()
+            actions.perform() 
 
     def CheckValuesDB(self, table, field, value, dbg_print=0):
         """
