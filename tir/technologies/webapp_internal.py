@@ -127,7 +127,18 @@ class WebappInternal(Base):
 
         while(not self.element_exists(term=".tmenu", scrap_type=enum.ScrapType.CSS_SELECTOR, main_container="body")):
             self.close_coin_screen()
-            self.close_modal()
+            try:
+                self.wait_blocker_ajax()
+                # Window ma3 <parameters> warning
+                info_window = wait(self.driver, 3).until(
+                    EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, \"tmodaldialog twidget borderless\")]"))
+                )
+                if info_window:
+                    self.SetButton (button = self.language.close)     # [Закрыть]
+                    time.sleep(0.2)
+                    self.SetButton (button = self.language.no)        # [Нет]
+            finally:
+                self.close_modal()
 
         if save_input:
             self.set_log_info()
