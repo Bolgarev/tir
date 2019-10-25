@@ -24,6 +24,7 @@ from tir.technologies.core.base import Base
 from tir.technologies.core.numexec import NumExec
 from math import sqrt, pow
 from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import TimeoutException
 
 class WebappInternal(Base):
     """
@@ -124,21 +125,32 @@ class WebappInternal(Base):
 
         self.user_screen()
         self.environment_screen()
+        
+        while(not self.element_exists(term="//div[@class=\"tpanelcss twidget dict-tpanelcss\"]", scrap_type=enum.ScrapType.XPATH)):
+        # while(not self.element_exists(term=".tmenu", scrap_type=enum.ScrapType.CSS_SELECTOR, main_container="body")):
+            
+            try:
+                self.wait_blocker_ajax()
+                wait(self.driver, 5).until(
+                    EC.visibility_of_element_located((By.XPATH, "//div[contains(@class, \"tmodaldialog twidget borderless\")]"))
+                )            
+                self.close_coin_screen()
+            except TimeoutException:
+                print ("No coin screen window, continue...")
 
-        while(not self.element_exists(term=".tmenu", scrap_type=enum.ScrapType.CSS_SELECTOR, main_container="body")):
-            self.close_coin_screen()
             try:
                 self.wait_blocker_ajax()
                 # Window ma3 <parameters> warning
-                info_window = wait(self.driver, 3).until(
-                    EC.element_to_be_clickable((By.XPATH, "//div[contains(@class, \"tmodaldialog twidget borderless\")]"))
+                info_window = wait(self.driver, 5).until(
+                    EC.visibility_of_element_located((By.XPATH, "//div[contains(@class, \"tmodaldialog twidget borderless\")]"))
                 )
-                if info_window:
-                    self.SetButton (button = self.language.close)     # [Закрыть]
-                    time.sleep(0.2)
-                    self.SetButton (button = self.language.no)        # [Нет]
-            finally:
-                self.close_modal()
+                self.SetButton (button = self.language.close)     # [Закрыть]
+                time.sleep(0.2)
+                self.SetButton (button = self.language.no)        # [Нет]
+            except TimeoutException:
+                print ("No info window, continue...")
+            
+            self.close_modal()
 
         if save_input:
             self.set_log_info()
@@ -4922,21 +4934,8 @@ class WebappInternal(Base):
         >>> #Calling the method
         >>> oHelper.TearDown()
         """
-        # if self.config.coverage:
-
-        #     self.driver.refresh()
-        #     self.wait_element(term="[name='cGetUser']", scrap_type=enum.ScrapType.CSS_SELECTOR, main_container='body')
-        #     timeout = 900
-            
-        #     self.Finish()
-        #     self.WaitProcessing("Aguarde... Coletando informacoes de cobertura de codigo.", timeout)
-            
-        # if self.config.num_exec:
-        #     self.num_exec.post_exec(self.config.url_set_end_exec)
-        # .<selenium.webdriver.chrome.webdriver.WebDriver (session="ed5959cd3d6fd421bd4cd6c9b05aaa17")>
-        
         # Work variant, 99.9%
-        # Last tests in 26.09 on Firefox
+        # Last tests in 24.10 on Chrome
         act = ActionChains(self.driver)
         try:
             try:
@@ -4972,8 +4971,6 @@ class WebappInternal(Base):
                         self.SetButton (self.FindButton ("msfinal", "STR0006"))     # Завершить
                     except:
                         self.log_error ("No such button in exit window")
-                # elif e.text == "Выйти":
-                #     self.SetButton (self.FindButton ("msfinal", "STR0006"))     # If we have windows content != "Завершить"
 
         except:
             time.sleep(2)
