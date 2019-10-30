@@ -3362,6 +3362,7 @@ class WebappInternal(Base):
             xpath = xpath_soup(columns[column_number])
             ret = self.get_selenium_column_element(xpath)
             while not ret:
+                ActionChains(self.driver).key_down(Keys.UP).pause(1).key_up(Keys.UP).perform()
                 ret = self.try_recover_lost_line(field, grid_id, row, headers, field_to_label)
             return ret
         else:
