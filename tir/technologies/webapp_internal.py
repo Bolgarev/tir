@@ -6,6 +6,7 @@ import os
 import random
 import uuid
 import codecs
+import sqlalchemy as db
 from functools import reduce
 from selenium.webdriver.common.keys import Keys
 from bs4 import BeautifulSoup
@@ -13,16 +14,17 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import WebDriverWait as wait
 import tir.technologies.core.enumerations as enum
 from tir.technologies.core.log import Log
 from tir.technologies.core.config import ConfigLoader
 from tir.technologies.core.language import LanguagePack
-from selenium.webdriver.support.ui import WebDriverWait as wait
 from tir.technologies.core.third_party.xpath_soup import xpath_soup
 from tir.technologies.core.base import Base
 from tir.technologies.core.numexec import NumExec
 from math import sqrt, pow
 from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import TimeoutException
 
 class WebappInternal(Base):
     """
@@ -68,6 +70,7 @@ class WebappInternal(Base):
         self.num_exec = NumExec()
         self.restart_counter = 0
         self.used_ids = {}
+        self.DB_engine, self.DB_instance = self.connect_DB()
 
         self.parameters = []
         self.backup_parameters = []
@@ -122,9 +125,34 @@ class WebappInternal(Base):
 
         self.user_screen()
         self.environment_screen()
+        
+        while(not self.element_exists(term="//div[@class=\"tpanelcss twidget dict-tpanelcss\"]", scrap_type=enum.ScrapType.XPATH)):
+        # while(not self.element_exists(term=".tmenu", scrap_type=enum.ScrapType.CSS_SELECTOR, main_container="body")):
+            
+            try:
+                self.wait_blocker_ajax()
+                wait(self.driver, 5).until(
+                    EC.visibility_of_element_located((By.XPATH, "//div[contains(@class, \"tmodaldialog twidget borderless\")]"))
+                )            
+                self.close_coin_screen()
+            except TimeoutException:
+                print ("No coin screen window, continue...")
 
-        while(not self.element_exists(term=".tmenu", scrap_type=enum.ScrapType.CSS_SELECTOR, main_container="body")):
-            self.close_coin_screen()
+            try:
+                self.wait_blocker_ajax()
+                # Window ma3 <parameters> warning
+                info_window = wait(self.driver, 5).until(
+                    EC.visibility_of_element_located((By.XPATH, "//div[contains(@class, \"tmodaldialog twidget borderless\")]"))
+                )
+                self.SetButton (button = self.language.close)     # [Закрыть]
+                time.sleep(0.2)
+                try:
+                    self.SetButton (button = self.language.no)        # [Нет]
+                except:
+                    pass
+            except TimeoutException:
+                print ("No info window, continue...")
+            
             self.close_modal()
 
         if save_input:
@@ -1850,7 +1878,7 @@ class WebappInternal(Base):
             return z
 
 
-    def FindButton(self, csource, cposition, flag=True):
+    def FindButton(self, csource, cposition, flag = False):
         """
         Method that gets string label of button from [name_module.tres]
         :param flag: flag that toggles FindButton to search in all tres file [tres25.csv] or in tres folder with all tres's
@@ -1967,11 +1995,11 @@ class WebappInternal(Base):
             for x in range (start_index, end_index+1):
                 result = "//" + head_node + "[@id=" + str(x) + "][contains(@" + attr_name + ",\'" + attr_contains + "\')]"
                 mass_WebElement.append (self.driver.find_element_by_xpath (result))
-
+            
+            
             for z in range (start_index, end_index+1):
-                time.sleep(1)
+                self.wait_blocker_ajax()
                 self.click (mass_WebElement[z])
-
         else:
             self.log_error ("Error, def SetDial(), attr_name not set up!")
 
@@ -2468,8 +2496,7 @@ class WebappInternal(Base):
         panel = next(iter(self.filter_is_displayed(panels_filtered)))
         element = ""
         if panel:
-            xpath_folder = xpath_soup(panel)
-            element = lambda: self.driver.find_element_by_xpath(xpath_folder)
+            element = lambda: self.driver.find_element_by_xpath(xpath_soup(panel))
         if element:
             self.scroll_to_element(element())#posiciona o scroll baseado na height do elemento a ser clicado.
             self.set_element_focus(element())
@@ -3245,7 +3272,7 @@ class WebappInternal(Base):
                                                     self.send_keys(selenium_input(), Keys.ENTER)
 
                                 self.wait_element(term=xpath_soup(child[0]), scrap_type=enum.ScrapType.XPATH, presence=False)
-                                time.sleep(2)
+                                time.sleep(1)
                                 current_value = self.get_element_text(selenium_column())
 
                             else:
@@ -3331,11 +3358,10 @@ class WebappInternal(Base):
             if column_name not in headers[field[2]]:
                 self.log_error(self.language.messages.grid_column_error)
 
-            column_number = headers[field[2]][column_name.lower()]
+            column_number = headers[field[2]][column_name]
             xpath = xpath_soup(columns[column_number])
             ret = self.get_selenium_column_element(xpath)
             while not ret:
-                ActionChains(self.driver).key_down(Keys.UP).pause(1).key_up(Keys.UP).perform()
                 ret = self.try_recover_lost_line(field, grid_id, row, headers, field_to_label)
             return ret
         else:
@@ -4056,53 +4082,52 @@ class WebappInternal(Base):
         >>> self.log_error("Element was not found")
         """
 
-        pass
-        # routine_name = self.config.routine if ">" not in self.config.routine else self.config.routine.split(">")[-1].strip()
-        #
-        # routine_name = routine_name if routine_name else "error"
-        #
-        #
-        # stack_item = self.log.get_testcase_stack()
-        # test_number = f"{stack_item.split('_')[-1]} -" if stack_item else ""
-        # log_message = f"{test_number} {message}"
-        # self.log.set_seconds()
-        #
-        # if self.config.screenshot:
-        #
-        #     log_file = f"{self.log.user}_{uuid.uuid4().hex}_{routine_name}-{test_number} error.png"
-        #
-        #     try:
-        #         if self.config.log_folder:
-        #             path = f"{self.log.folder}\\{self.log.station}\\{log_file}"
-        #             os.makedirs(f"{self.log.folder}\\{self.log.station}")
-        #         else:
-        #             path = f"Log\\{self.log.station}\\{log_file}"
-        #             os.makedirs(f"Log\\{self.log.station}")
-        #     except OSError:
-        #         pass
-        #
-        #     if self.log.get_testcase_stack() not in self.log.test_case_log:
-        #         self.driver.save_screenshot(path)
-        #
-        # if new_log_line:
-        #     self.log.new_line(False, log_message)
-        # self.log.save_file(routine_name)
-        # if not self.config.skip_restart and len(self.log.list_of_testcases()) > 1 and self.config.initial_program != '':
-        #     self.LogOff()
-        #     self.driver.close()
-        # elif self.config.coverage and self.config.initial_program != '':
-        #     self.LogOff()
-        #     self.driver.close()
-        # else:
-        #     self.driver.close()
-        #
-        # if self.restart_counter > 2:
-        #     self.restart_counter = 0
-        #
-        # if self.config.num_exec and stack_item == "setUpClass":
-        #     self.num_exec.post_exec(self.config.url_set_end_exec)
-        #
-        # self.assertTrue(False, log_message)
+        routine_name = self.config.routine if ">" not in self.config.routine else self.config.routine.split(">")[-1].strip()
+
+        routine_name = routine_name if routine_name else "error"
+
+        
+        stack_item = self.log.get_testcase_stack()
+        test_number = f"{stack_item.split('_')[-1]} -" if stack_item else ""
+        log_message = f"{test_number} {message}"
+        self.log.set_seconds()
+
+        if self.config.screenshot:
+
+            log_file = f"{self.log.user}_{uuid.uuid4().hex}_{routine_name}-{test_number} error.png"
+            
+            try:
+                if self.config.log_folder:
+                    path = f"{self.log.folder}\\{self.log.station}\\{log_file}"
+                    os.makedirs(f"{self.log.folder}\\{self.log.station}")
+                else:
+                    path = f"Log\\{self.log.station}\\{log_file}"
+                    os.makedirs(f"Log\\{self.log.station}")
+            except OSError:
+                pass
+            
+            if self.log.get_testcase_stack() not in self.log.test_case_log:
+                self.driver.save_screenshot(path)
+
+        if new_log_line:
+            self.log.new_line(False, log_message)
+        self.log.save_file(routine_name)
+        if not self.config.skip_restart and len(self.log.list_of_testcases()) > 1 and self.config.initial_program != '':
+            self.LogOff()
+            self.driver.close()
+        elif self.config.coverage and self.config.initial_program != '':
+            self.LogOff()
+            self.driver.close()
+        else:
+            self.driver.close()
+
+        if self.restart_counter > 2:
+            self.restart_counter = 0
+
+        if self.config.num_exec and stack_item == "setUpClass":
+            self.num_exec.post_exec(self.config.url_set_end_exec)
+            
+        self.assertTrue(False, log_message)
 
     def ClickIcon(self, icon_text):
         """
@@ -4418,7 +4443,7 @@ class WebappInternal(Base):
 
         routine_name = routine_name if routine_name else "error"
 
-        self.log.save_file(routine_name)
+        #self.log.save_file(routine_name)
 
         self.errors = []
         
@@ -4537,7 +4562,6 @@ class WebappInternal(Base):
             action.perform()
             self.click (cb_el, click_type = enum.ClickType.SELENIUM)  # click value
 
-<<<<<<< HEAD
     def ClickCellGrid(self, xpath_ext):
         """
         Function opens cell in grid, if SetValue(grid=True) doesn't work.
@@ -4701,8 +4725,6 @@ class WebappInternal(Base):
             action.move_to_element(element)
             action.perform()
 
-=======
->>>>>>> b33edd0a85c65f90b48de2347211bea93e776a4b
     def ClickLabel(self, label_name):
         """
         Clicks on a Label on the screen.
@@ -4907,7 +4929,6 @@ class WebappInternal(Base):
         else:
             return False
                 
-
     def TearDown(self):
         """
         Closes the webdriver and ends the test case.
