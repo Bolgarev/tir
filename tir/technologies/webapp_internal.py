@@ -4712,7 +4712,7 @@ class WebappInternal(Base):
 
         return db_engine, db_inst
     
-    # BETA
+    # BETA will make after vacation, 11.11.2019
     def ElementWaiter(self, element_path):
         element = wait(self.driver, 20).until(
             EC.visibility_of_element_located((By.XPATH, "{}".format(element_path)))
