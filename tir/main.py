@@ -300,7 +300,7 @@ class Webapp():
         >>> # Call the method:
         >>> oHelper.CheckValuesDB(table="sb5000", field="B5_CEME", value='22', dbg_print=1)
         """
-        self.__webapp.CheckValuesDB(table, field, value, dbg_print)
+        return self.__webapp.CheckValuesDB(table, field, value, dbg_print)
 
     def ClickLabel(self, label_name):
         """

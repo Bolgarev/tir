@@ -146,7 +146,10 @@ class WebappInternal(Base):
                 )
                 self.SetButton (button = self.language.close)     # [Закрыть]
                 time.sleep(0.2)
-                self.SetButton (button = self.language.no)        # [Нет]
+                try:
+                    self.SetButton (button = self.language.no)        # [Нет]
+                except:
+                    pass
             except TimeoutException:
                 print ("No info window, continue...")
             
@@ -1992,11 +1995,11 @@ class WebappInternal(Base):
             for x in range (start_index, end_index+1):
                 result = "//" + head_node + "[@id=" + str(x) + "][contains(@" + attr_name + ",\'" + attr_contains + "\')]"
                 mass_WebElement.append (self.driver.find_element_by_xpath (result))
-
+            
+            
             for z in range (start_index, end_index+1):
-                time.sleep(1)
+                self.wait_blocker_ajax()
                 self.click (mass_WebElement[z])
-
         else:
             self.log_error ("Error, def SetDial(), attr_name not set up!")
 
@@ -4680,6 +4683,7 @@ class WebappInternal(Base):
             query_result = query_result.fetchall()
             if dbg_print:
                 print(query_result)     # dbg print string from DBase
+            return value
         else:
             print("[INFO] Value {} from field {} not found in DB".format(value.split(), field))
 
