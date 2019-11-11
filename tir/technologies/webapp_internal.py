@@ -6,7 +6,6 @@ import os
 import random
 import uuid
 import codecs
-import sqlalchemy as db
 from functools import reduce
 from selenium.webdriver.common.keys import Keys
 from bs4 import BeautifulSoup
@@ -14,17 +13,17 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import Select
-from selenium.webdriver.support.ui import WebDriverWait as wait
 import tir.technologies.core.enumerations as enum
 from tir.technologies.core.log import Log
 from tir.technologies.core.config import ConfigLoader
 from tir.technologies.core.language import LanguagePack
+from selenium.webdriver.support.ui import WebDriverWait as wait
 from tir.technologies.core.third_party.xpath_soup import xpath_soup
 from tir.technologies.core.base import Base
 from tir.technologies.core.numexec import NumExec
 from math import sqrt, pow
 from selenium.common.exceptions import StaleElementReferenceException
-from selenium.common.exceptions import TimeoutException
+
 
 class WebappInternal(Base):
     """
@@ -45,6 +44,7 @@ class WebappInternal(Base):
     >>> def __init__(self, config_path="", autostart=True):
     >>>     self.__webapp = WebappInternal(config_path, autostart)
     """
+    __slots__ = ['base_container', 'grid_check', 'grid_counters', 'grid_input', 'down_loop_grid', 'num_exec', 'restart_counter', 'used_ids', 'parameters', 'backup_parameters']
     def __init__(self, config_path="", autostart=True):
         """
         Definition of each global variable:
@@ -70,10 +70,10 @@ class WebappInternal(Base):
         self.num_exec = NumExec()
         self.restart_counter = 0
         self.used_ids = {}
-        self.DB_engine, self.DB_instance = self.connect_DB()
 
         self.parameters = []
         self.backup_parameters = []
+
 
     def Setup(self, initial_program, date='', group='99', branch='01', module='', save_input=True):
         """
@@ -125,34 +125,9 @@ class WebappInternal(Base):
 
         self.user_screen()
         self.environment_screen()
-        
-        while(not self.element_exists(term="//div[@class=\"tpanelcss twidget dict-tpanelcss\"]", scrap_type=enum.ScrapType.XPATH)):
-        # while(not self.element_exists(term=".tmenu", scrap_type=enum.ScrapType.CSS_SELECTOR, main_container="body")):
-            
-            try:
-                self.wait_blocker_ajax()
-                wait(self.driver, 5).until(
-                    EC.visibility_of_element_located((By.XPATH, "//div[contains(@class, \"tmodaldialog twidget borderless\")]"))
-                )            
-                self.close_coin_screen()
-            except TimeoutException:
-                print ("No coin screen window, continue...")
 
-            try:
-                self.wait_blocker_ajax()
-                # Window ma3 <parameters> warning
-                info_window = wait(self.driver, 5).until(
-                    EC.visibility_of_element_located((By.XPATH, "//div[contains(@class, \"tmodaldialog twidget borderless\")]"))
-                )
-                self.SetButton (button = self.language.close)     # [Закрыть]
-                time.sleep(0.2)
-                try:
-                    self.SetButton (button = self.language.no)        # [Нет]
-                except:
-                    pass
-            except TimeoutException:
-                print ("No info window, continue...")
-            
+        while(not self.element_exists(term=".tmenu", scrap_type=enum.ScrapType.CSS_SELECTOR, main_container="body")):
+            self.close_coin_screen()
             self.close_modal()
 
         if save_input:
@@ -519,7 +494,7 @@ class WebappInternal(Base):
         container = self.get_current_container()
         while (time.time() < endtime and container and self.element_exists(term="img[src*='fwskin_alert_ico.png']", scrap_type=enum.ScrapType.CSS_SELECTOR)):
             self.SetButton(self.language.close)
-            time.sleep(1)
+            time.sleep(0.3) # vzvz1
         self.wait_element_timeout(term="[name='cGetUser']", scrap_type=enum.ScrapType.CSS_SELECTOR, timeout = self.config.time_out, main_container='body')
 
     def set_log_info(self):
@@ -1120,7 +1095,7 @@ class WebappInternal(Base):
 
                         #Error! 04.09 (CTBA161 module). No need to wait element, if focused already
                         #self.wait.until (EC.element_to_be_clickable ((By.XPATH, xpath_soup(element))))
-                        time.sleep(4)
+                        time.sleep(0.3) # vzvz4
 
                         self.select_combo(element, main_value)
                         current_value = self.get_web_value(input_field()).strip()
@@ -1478,7 +1453,7 @@ class WebappInternal(Base):
             act.send_keys('q')
             act.key_up (Keys.LEFT_CONTROL)
             act.perform()
-            time.sleep(5)
+            time.sleep(0.3) #vzvz 5
             self.SetButton (self.FindButton ("msfinal", "STR0006"))     # Завершить
 
     def print_in (self):
@@ -1616,7 +1591,7 @@ class WebappInternal(Base):
 
             button = next(iter(filter(lambda x: self.language.details.lower() in x.text.lower(),top_layer.select("button"))), None)
             self.click(self.driver.find_element_by_xpath(xpath_soup(button)))
-            time.sleep(1)
+            time.sleep(0.3) # vzvz 1
 
         self.log_error(message)
 
@@ -1878,7 +1853,7 @@ class WebappInternal(Base):
             return z
 
 
-    def FindButton(self, csource, cposition, flag = False):
+    def FindButton(self, csource, cposition, flag=True):
         """
         Method that gets string label of button from [name_module.tres]
         :param flag: flag that toggles FindButton to search in all tres file [tres25.csv] or in tres folder with all tres's
@@ -1995,11 +1970,11 @@ class WebappInternal(Base):
             for x in range (start_index, end_index+1):
                 result = "//" + head_node + "[@id=" + str(x) + "][contains(@" + attr_name + ",\'" + attr_contains + "\')]"
                 mass_WebElement.append (self.driver.find_element_by_xpath (result))
-            
-            
+
             for z in range (start_index, end_index+1):
-                self.wait_blocker_ajax()
+                time.sleep(0.3) #vzvz 1
                 self.click (mass_WebElement[z])
+
         else:
             self.log_error ("Error, def SetDial(), attr_name not set up!")
 
@@ -2054,7 +2029,7 @@ class WebappInternal(Base):
         >>> # Calling the method to click on a specific button:
         >>> oHelper.ClickEditButton()
         """
-        time.sleep (2)
+        time.sleep(0.3) #vzvz 2
 
         buttons = self.driver.find_elements_by_xpath ("//button[text()]")     # find all buttons on the page here (need function)
         for b in buttons:
@@ -2143,7 +2118,7 @@ class WebappInternal(Base):
             if (button.lower() == "x" and self.element_exists(term=".ui-button.ui-dialog-titlebar-close[title='Close'], img[src*='fwskin_delete_ico.png'], img[src*='fwskin_modal_close.png']", scrap_type=enum.ScrapType.CSS_SELECTOR, check_error=check_error)):
                 element = self.driver.find_element(By.CSS_SELECTOR, ".ui-button.ui-dialog-titlebar-close[title='Close'], img[src*='fwskin_delete_ico.png'], img[src*='fwskin_modal_close.png']")
                 self.scroll_to_element(element)
-                time.sleep(2)
+                time.sleep(0.3) #vzvz 2
                 self.click(element)
                 return
 
@@ -2496,11 +2471,12 @@ class WebappInternal(Base):
         panel = next(iter(self.filter_is_displayed(panels_filtered)))
         element = ""
         if panel:
-            element = lambda: self.driver.find_element_by_xpath(xpath_soup(panel))
+            xpath_folder = xpath_soup(panel)
+            element = lambda: self.driver.find_element_by_xpath(xpath_folder)
         if element:
             self.scroll_to_element(element())#posiciona o scroll baseado na height do elemento a ser clicado.
             self.set_element_focus(element())
-            time.sleep(1)
+            time.sleep(0.3) #vzvz 1
             self.driver.execute_script("arguments[0].click()", element())
         else:
             self.log_error("Couldn't find panel item.")
@@ -2586,14 +2562,14 @@ class WebappInternal(Base):
                         clicking_row_element_bs = current
                     clicking_row_element = lambda: self.soup_to_selenium(clicking_row_element_bs)
                     self.set_element_focus(clicking_row_element())
-                    time.sleep(1)
+                    time.sleep(0.3) #vzvz 1
                     if class_grid != "tgrid":
                         self.send_keys(clicking_row_element(),Keys.ENTER)
                     else:
                         self.double_click(clicking_row_element())
                     contents.remove(text)
                 if contents:
-                    time.sleep(2)
+                    time.sleep(0.3) #vzvz 2
                     last = current
                     if text not in contents and text != '':
                         scroll_down()
@@ -2655,7 +2631,7 @@ class WebappInternal(Base):
             text = td.text.strip() if td else ""
             if text in match_value:
                 break
-            time.sleep(2)
+            time.sleep(0.3) #vzvz 2
             last = current
             scroll_down()
             time.sleep(0.5)
@@ -3126,7 +3102,7 @@ class WebappInternal(Base):
 
         while(self.element_exists(term=".tmodaldialog", scrap_type=enum.ScrapType.CSS_SELECTOR, position=initial_layer+1, main_container="body") and time.time() < endtime):
             print("Waiting for container to be active")
-            time.sleep(1)
+            time.sleep(0.2) #vzvz 1
             
         if "tget" in self.get_current_container().next.attrs['class']:
             self.wait_element(field[0])
@@ -3155,7 +3131,23 @@ class WebappInternal(Base):
                 if (field[4] is not None) and (field[4] > len(rows) - 1 or field[4] < 0):
                     self.log_error(f"Couldn't select the specified row: {field[4] + 1}")
 
-                row = self.get_selected_row(rows) if field[4] == None else rows[field[4]]
+                # start russian dev-team changes,
+                # prev ->  row = self.get_selected_row(rows) if field[4] == None else rows[field[4]]
+                if field[4] != None and len(rows) - 1 < field[4]:
+                    self.new_grid_line(field)
+
+                    # new <tr> will appeare, so we need to update containers
+                    soup = self.get_current_DOM()
+                    containers = soup.select(".tmodaldialog")
+                    containers = self.zindex_sort(containers, True)
+                    grids = containers[0].select(".tgetdados, .tgrid, .tcbrowse")
+                    grids = self.filter_displayed_elements(grids)
+                    rows = grids[field[2]].select("tbody tr")
+
+                    row = self.get_selected_row(rows) if field[4] == None else rows[field[4]]
+                else:
+                    row = self.get_selected_row(rows) if field[4] == None else rows[field[4]]
+                # end russian dev-team changes
 
                 if row:
                     while (int(row.attrs["id"]) < self.grid_counters[grid_id]) and (down_loop < 2) and self.down_loop_grid and field[4] is None and time.time() < endtime:
@@ -3234,7 +3226,7 @@ class WebappInternal(Base):
 
                             if child_type == "input":
 
-                                time.sleep(2)
+                                time.sleep(1) # vzvz 2
                                 selenium_input = lambda: self.driver.find_element_by_xpath(xpath_soup(child[0]))
                                 self.wait_element(term=xpath_soup(child[0]), scrap_type=enum.ScrapType.XPATH)
                                 valtype = selenium_input().get_attribute("valuetype")
@@ -3272,7 +3264,7 @@ class WebappInternal(Base):
                                                     self.send_keys(selenium_input(), Keys.ENTER)
 
                                 self.wait_element(term=xpath_soup(child[0]), scrap_type=enum.ScrapType.XPATH, presence=False)
-                                time.sleep(1)
+                                time.sleep(0.3) #vzvz 2
                                 current_value = self.get_element_text(selenium_column())
 
                             else:
@@ -3358,7 +3350,7 @@ class WebappInternal(Base):
             if column_name not in headers[field[2]]:
                 self.log_error(self.language.messages.grid_column_error)
 
-            column_number = headers[field[2]][column_name]
+            column_number = headers[field[2]][column_name.lower()]
             xpath = xpath_soup(columns[column_number])
             ret = self.get_selenium_column_element(xpath)
             while not ret:
@@ -3486,7 +3478,9 @@ class WebappInternal(Base):
             if field[2] > len(grids):
                 self.log_error(self.language.messages.grid_number_error)
             rows = grids[field[2]].select("tbody tr")
-            row = self.get_selected_row(rows)
+            # row = self.get_selected_row(rows)
+            # get last row, not selected
+            row = rows[-1]
             if row:
                 columns = row.select("td")
                 if columns:
@@ -3495,7 +3489,8 @@ class WebappInternal(Base):
                     self.driver.execute_script("$('.horizontal-scroll').scrollLeft(-400000);")
                     self.set_element_focus(second_column())
                     self.wait.until(EC.visibility_of_element_located((By.XPATH, xpath_soup(columns[0]))))
-                    ActionChains(self.driver).move_to_element(second_column()).send_keys_to_element(second_column(), Keys.DOWN).perform()
+                    ActionChains(self.driver).move_to_element(second_column()).click().perform()
+                    ActionChains(self.driver).pause(1).key_down(Keys.DOWN).perform()
 
                     endtime = time.time() + self.config.time_out
                     while (time.time() < endtime and not(self.element_exists(term=".tgetdados tbody tr, .tgrid tbody tr", scrap_type=enum.ScrapType.CSS_SELECTOR, position=len(rows)+1))):
@@ -4083,52 +4078,53 @@ class WebappInternal(Base):
         >>> self.log_error("Element was not found")
         """
 
-        routine_name = self.config.routine if ">" not in self.config.routine else self.config.routine.split(">")[-1].strip()
-
-        routine_name = routine_name if routine_name else "error"
-
-        
-        stack_item = self.log.get_testcase_stack()
-        test_number = f"{stack_item.split('_')[-1]} -" if stack_item else ""
-        log_message = f"{test_number} {message}"
-        self.log.set_seconds()
-
-        if self.config.screenshot:
-
-            log_file = f"{self.log.user}_{uuid.uuid4().hex}_{routine_name}-{test_number} error.png"
-            
-            try:
-                if self.config.log_folder:
-                    path = f"{self.log.folder}\\{self.log.station}\\{log_file}"
-                    os.makedirs(f"{self.log.folder}\\{self.log.station}")
-                else:
-                    path = f"Log\\{self.log.station}\\{log_file}"
-                    os.makedirs(f"Log\\{self.log.station}")
-            except OSError:
-                pass
-            
-            if self.log.get_testcase_stack() not in self.log.test_case_log:
-                self.driver.save_screenshot(path)
-
-        if new_log_line:
-            self.log.new_line(False, log_message)
-        self.log.save_file(routine_name)
-        if not self.config.skip_restart and len(self.log.list_of_testcases()) > 1 and self.config.initial_program != '':
-            self.LogOff()
-            self.driver.close()
-        elif self.config.coverage and self.config.initial_program != '':
-            self.LogOff()
-            self.driver.close()
-        else:
-            self.driver.close()
-
-        if self.restart_counter > 2:
-            self.restart_counter = 0
-
-        if self.config.num_exec and stack_item == "setUpClass":
-            self.num_exec.post_exec(self.config.url_set_end_exec)
-            
-        self.assertTrue(False, log_message)
+        pass
+        # routine_name = self.config.routine if ">" not in self.config.routine else self.config.routine.split(">")[-1].strip()
+        #
+        # routine_name = routine_name if routine_name else "error"
+        #
+        #
+        # stack_item = self.log.get_testcase_stack()
+        # test_number = f"{stack_item.split('_')[-1]} -" if stack_item else ""
+        # log_message = f"{test_number} {message}"
+        # self.log.set_seconds()
+        #
+        # if self.config.screenshot:
+        #
+        #     log_file = f"{self.log.user}_{uuid.uuid4().hex}_{routine_name}-{test_number} error.png"
+        #
+        #     try:
+        #         if self.config.log_folder:
+        #             path = f"{self.log.folder}\\{self.log.station}\\{log_file}"
+        #             os.makedirs(f"{self.log.folder}\\{self.log.station}")
+        #         else:
+        #             path = f"Log\\{self.log.station}\\{log_file}"
+        #             os.makedirs(f"Log\\{self.log.station}")
+        #     except OSError:
+        #         pass
+        #
+        #     if self.log.get_testcase_stack() not in self.log.test_case_log:
+        #         self.driver.save_screenshot(path)
+        #
+        # if new_log_line:
+        #     self.log.new_line(False, log_message)
+        # self.log.save_file(routine_name)
+        # if not self.config.skip_restart and len(self.log.list_of_testcases()) > 1 and self.config.initial_program != '':
+        #     self.LogOff()
+        #     self.driver.close()
+        # elif self.config.coverage and self.config.initial_program != '':
+        #     self.LogOff()
+        #     self.driver.close()
+        # else:
+        #     self.driver.close()
+        #
+        # if self.restart_counter > 2:
+        #     self.restart_counter = 0
+        #
+        # if self.config.num_exec and stack_item == "setUpClass":
+        #     self.num_exec.post_exec(self.config.url_set_end_exec)
+        #
+        # self.assertTrue(False, log_message)
 
     def ClickIcon(self, icon_text):
         """
@@ -4444,7 +4440,7 @@ class WebappInternal(Base):
 
         routine_name = routine_name if routine_name else "error"
 
-        #self.log.save_file(routine_name)
+        self.log.save_file(routine_name)
 
         self.errors = []
         
@@ -4562,169 +4558,6 @@ class WebappInternal(Base):
             action.move_to_element(cb_el)
             action.perform()
             self.click (cb_el, click_type = enum.ClickType.SELENIUM)  # click value
-
-    def ClickCellGrid(self, xpath_ext):
-        """
-        Function opens cell in grid, if SetValue(grid=True) doesn't work.
-        
-        :param xpath_ext: Xpath for unactivated cell
-        :type xpath_ext: str
-
-        >>> # Call the method:
-        >>> oHelper.ClickCellGrid('//div[contains(@class, "tgetdados twidget dict-msbrgetdbase\")]/div/table/tbody/tr/td[3]')
-        >>> oHelper.SetValue('D2_COD', '1016187')
-        """
-        time.sleep(5)
-        if not xpath_ext:
-            self.log_error("No Argument [xpath_ext] in ClickCellGrid")
-            return      
-        element = self.wait.until(
-            EC.element_to_be_clickable((By.XPATH, xpath_ext))
-        )
-        self.click (element, click_type=enum.ClickType.SELENIUM)
-        ActionChains(self.driver).move_to_element(element).send_keys_to_element(element, Keys.ENTER).perform()
-
-    def SearchBySearchBox(self, search_txt, search_box_index = 0, filter_index = 0):
-        """
-        Function searches for data record by selecting between key or column
-        
-        :param search_txt: String to insert in field to search for recently created data record
-        :type search_txt: str
-        :param search_box_index: Selecting between type of search (key and column)
-        :type search_box_index: int
-        :param filter_index: Select search mask
-        :type filter_index: int
-
-        >>> # Call the method:
-        >>> oHelper.SearchBySearchBox("14/34", 2, 2)
-        """
-        if search_box_index and filter:
-            self.wait_blocker_ajax()
-            button = wait(self.driver, 15).until(EC.visibility_of_element_located((By.XPATH, '//div[@class=\"tpanel twidget dict-tpanel\"]/div[@class=\"tbutton twidget dict-tbutton\"]/button[contains(@style, \"rgb(245, 245, 245)\")]')))
-            actions = ActionChains(self.driver)
-            actions.move_to_element(button)
-            self.click (button, click_type=enum.ClickType.SELENIUM)
-        
-            label = self.driver.find_element_by_xpath('(//div[@class=\"button-container\"]/table/tbody/tr[@class=\"button-bar\"]/td)[{}]'.format(search_box_index))
-            actions.move_to_element(label)
-            self.click (label, click_type=enum.ClickType.SELENIUM)
-
-            if search_box_index == 1:
-                key = self.driver.find_element_by_xpath('(//div[contains(@class, \"tradiobuttonitem\")])[{}]'.format(filter_index))
-                actions.move_to_element(key)
-                self.click (key, click_type=enum.ClickType.SELENIUM)
-                self.click (key, click_type=enum.ClickType.SELENIUM)
-
-            elif search_box_index == 2:
-                column = self.driver.find_element_by_xpath('(//div[@class=\"tscrollbox twidget dict-tscrollbox hscroll-off no-border\"]/label[contains(@class, \"tcheckbox twidget dict-tcheckbox\")]/input)[{}]'.format(filter_index))
-                actions.move_to_element(column)
-                self.click (column, click_type=enum.ClickType.SELENIUM)
-                self.click (column, click_type=enum.ClickType.SELENIUM) 
-        
-                enter = self.driver.find_elements_by_xpath('//div[contains(@class, \"tget twidget dict-tget\")]/input[@class=\"placeHolder\"]')[0]
-                actions.move_to_element(enter)
-                self.click(enter, click_type=enum.ClickType.SELENIUM)
-                enter.clear()
-                enter.send_keys(search_txt, Keys.ENTER)
-
-                icon = self.driver.find_element_by_xpath("//div[@class=\"tpanel twidget dict-tpanel\"]/div[contains(@class, \"tget twidget dict-tget\")]/img[@style=\"top: 16.6667%;\"]")
-                actions = ActionChains(self.driver)
-                actions.move_to_element(icon)
-                actions.click()
-                actions.perform() 
-        else:
-            enter = wait(self.driver, 15).until(EC.visibility_of_element_located((By.XPATH, ('//div[contains(@class, \"tget twidget dict-tget\")]/input[@class=\"placeHolder\"]')[0])))
-            actions.move_to_element(enter)
-            self.click(enter, click_type=enum.ClickType.SELENIUM)
-            enter.clear()
-            enter.send_keys(search_txt, Keys.ENTER)
-
-            icon = self.driver.find_element_by_xpath("//div[@class=\"tpanel twidget dict-tpanel\"]/div[contains(@class, \"tget twidget dict-tget\")]/img[@style=\"top: 16.6667%;\"]")
-            actions = ActionChains(self.driver)
-            actions.move_to_element(icon)
-            actions.click()
-            actions.perform() 
-
-    def CheckValuesDB(self, table, field, value, dbg_print=0):
-        """
-        Function gets value from DB for comparing with recently created value by SetValue() in ma3-GUI testcase
-
-        :param table: Table from DB
-        :type table: str
-        :param field: Column from DB (in ma3 - field)
-        :type field: str
-        :param value: Value recently inserted in testcase (for search record in DB column)
-        :type value: str
-        :param dbg_print: Print in stdout founded record row by value from DB table? (1/0 = Y/N)
-        :type dbg_print: int
-
-        Usage:
-
-        >>> # Call the method:
-        >>> oHelper.CheckValuesDB(table="sb5000", field="B5_CEME", value='22', dbg_print=1)
-        """
-        new_list = []
-        metadata = db.MetaData()                            # get poles, cells, etc...
-        column = field.lower()
-
-        engine = self.DB_engine                             # initialize connection to DB
-        instance = self.DB_instance
-
-        if instance: print('[SYS] Successfully connected to DB [{}]'.format(engine))
-        table_init = db.Table(table, metadata, autoload=True, autoload_with=engine)
-
-        # instance.execute("select * from nnr000 where nnr_codigo = '22' order by nnr_filial, nnr_codigo;")  # RAW query
-        getDB_data = db.select([db.text("*"), table_init]).where(getattr(table_init.columns, column) == value)  # getattr (table_init.columns + column)
-        query_result = instance.execute(getDB_data)
-
-        # make array from trashy execute result:
-        if query_result:
-            print('[SYS] DB query executed succesfully')
-            print("[INFO] Value {} from field {} founded in DB".format(value.split(), field))
-            query_result = query_result.fetchall()
-            if dbg_print:
-                print(query_result)     # dbg print string from DBase
-            return value
-        else:
-            print("[INFO] Value {} from field {} not found in DB".format(value.split(), field))
-
-        # Table of concordance (field[ex.] <-> table)
-        #       NNR_CODIGO <-> nnr000
-        #       A1_NATUREZ <-> sa1000
-        #       B5_CEME <-> sb5000
-        #       FN6_SERIE <-> fn6000
-        #       H6_OPERAC <-> sn6000
-        #       DB_LOCALIZ <-> sdb000
-
-    def connect_DB(self):
-        """
-        [Internal]
-        Function provides connection to database, return an instance for futher use
-
-        :return: [db_engine - connection credentials, db_inst - sqlalchemy instance/object of DB]
-        :rtype: [str, inst]
-        """
-        username = self.config.DBusername   # json
-        password = self.config.DBpassword
-        ip = self.config.DBconnection
-
-        db_engine = db.create_engine(f'postgresql://{username}:{password}@{ip}/ma3-appliance')
-        db_inst = db_engine.connect()                       # connect with creds
-
-        return db_engine, db_inst
-    
-    # BETA will make after vacation, 11.11.2019
-    def ElementWaiter(self, element_path):
-        element = wait(self.driver, 20).until(
-            EC.visibility_of_element_located((By.XPATH, "{}".format(element_path)))
-        )
-        if element:
-            action = ActionChains(self.driver)
-            self.wait_blocker_ajax()
-            element = self.driver.find_element_by_xpath("{}".format(element_path))
-            self.scroll_to_element(element)
-            action.move_to_element(element)
-            action.perform()
 
     def ClickLabel(self, label_name):
         """
@@ -4930,6 +4763,7 @@ class WebappInternal(Base):
         else:
             return False
                 
+
     def TearDown(self):
         """
         Closes the webdriver and ends the test case.
