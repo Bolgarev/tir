@@ -23,6 +23,7 @@ from tir.technologies.core.base import Base
 from tir.technologies.core.numexec import NumExec
 from math import sqrt, pow
 from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import TimeoutException
 
 
 class WebappInternal(Base):
