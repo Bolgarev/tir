@@ -125,9 +125,37 @@ class WebappInternal(Base):
 
         self.user_screen()
         self.environment_screen()
+        
+        while(not self.element_exists(term="//div[@class=\"tpanelcss twidget dict-tpanelcss\"]", scrap_type=enum.ScrapType.XPATH)):
+        # while(not self.element_exists(term=".tmenu", scrap_type=enum.ScrapType.CSS_SELECTOR, main_container="body")):
+    
+            try:
+                self.wait_blocker_ajax()
+                wait(self.driver, 5).until(
+                    EC.visibility_of_element_located((By.XPATH, "//div[contains(@class, \"tmodaldialog twidget borderless\")]"))
+                )            
+                self.close_coin_screen()
+            except TimeoutException:
+                print ("No coin screen window, continue...")
 
-        while(not self.element_exists(term=".tmenu", scrap_type=enum.ScrapType.CSS_SELECTOR, main_container="body")):
-            self.close_coin_screen()
+            try:
+                self.wait_blocker_ajax()
+                # Window ma3 <parameters> warning
+                info_window = wait(self.driver, 5).until(
+                    EC.visibility_of_element_located((By.XPATH, "//div[contains(@class, \"tmodaldialog twidget borderless\")]"))
+                )
+                self.SetButton (button = self.language.close)     # [Закрыть]
+                time.sleep(0.2)
+                try:
+                    if self.driver.find_element_by_xpath ("//div[contains(@class, \"tmodaldialog twidget borderless\")]"):
+                        self.SetButton (button = self.language.no)        # [Нет]
+                    else:
+                        pass
+                except:
+                    pass
+            except TimeoutException:
+                print ("No info window, continue...")
+            
             self.close_modal()
 
         if save_input:
@@ -4807,6 +4835,7 @@ class WebappInternal(Base):
             for e in ext_window:
                 if e.text == "Завершить":
                     try:
+                        self.wait_blocker_ajax()
                         self.SetButton (self.FindButton ("msfinal", "STR0006"))     # Завершить
                     except:
                         self.log_error ("No such button in exit window")
@@ -4829,10 +4858,11 @@ class WebappInternal(Base):
             for e in ext_window:
                 if e.text == "Завершить":
                     try:
+                        self.wait_blocker_ajax()
                         self.SetButton (self.FindButton ("msfinal", "STR0006"))     # Завершить
                     except:
                         self.log_error ("No such button in exit window")
-                
+        time.sleep(1)
         self.driver.close()
             
     def containers_filter(self, containers):
