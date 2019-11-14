@@ -892,22 +892,28 @@ class Base(unittest.TestCase):
         >>> # Calling the method:
         >>> oHelper.Start()
         """
+        if platform.system() == "Windows":
+            extens = '.exe'
+        else:
+            extens = ''
         print("Starting the browser")
         if self.config.browser.lower() == "firefox":
-            driver_path = os.path.join(os.path.dirname(__file__), r'drivers\\geckodriver.exe')
+            driver_path = os.path.join(os.path.dirname(__file__), 'drivers', f'geckodriver{extens}')
             log_path = os.path.join(os.path.dirname(__file__), r'geckodriver.log')
             options = FirefoxOpt()
             options.set_headless(self.config.headless)
             self.driver = webdriver.Firefox(firefox_options=options, executable_path=driver_path, log_path=log_path)
         elif self.config.browser.lower() == "chrome":
-            driver_path = os.path.join(os.path.dirname(__file__), r'drivers\\chromedriver.exe')
+            driver_path = os.path.join(os.path.dirname(__file__), 'drivers', f'chromedriver{extens}')
             options = ChromeOpt()
             options.set_headless(self.config.headless)
+            options.add_argument("no-sandbox")
+            options.add_argument("--disable-extensions")
             self.driver = webdriver.Chrome(chrome_options=options, executable_path=driver_path)
 
         self.driver.maximize_window()
         self.driver.get(self.config.url)
-        self.wait = WebDriverWait(self.driver,10)
+        self.wait = WebDriverWait(self.driver, 10)
 
     def TearDown(self):
         """
