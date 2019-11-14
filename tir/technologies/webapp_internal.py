@@ -4734,9 +4734,10 @@ class WebappInternal(Base):
         """
         username = self.config.DBusername   # json
         password = self.config.DBpassword
+        ma3_env = self.config.Environment
         ip = self.config.DBconnection
 
-        db_engine = db.create_engine(f'postgresql://{username}:{password}@{ip}/ma3-appliance')
+        db_engine = db.create_engine(f'postgresql://{username}:{password}@{ip}/{ma3_env}')
         db_inst = db_engine.connect()                       # connect with creds
 
         return db_engine, db_inst
