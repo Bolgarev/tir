@@ -7,7 +7,6 @@ import sys
 import os
 import random
 import string
-import pwd
 import platform
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
@@ -78,7 +77,9 @@ class Base(unittest.TestCase):
         self.language = LanguagePack(self.config.language) if self.config.language else ""
         self.log = Log(folder=self.config.log_folder)
         self.log.station = socket.gethostname()
-        os.getlogin = lambda: pwd.getpwuid(os.getuid())[0]
+        if platform.system() == "Linux":
+            import pwd
+            os.getlogin = lambda: pwd.getpwuid(os.getuid())[0]
         self.log.user = os.getlogin()
 
         self.base_container = "body"
