@@ -128,7 +128,7 @@ class WebappInternal(Base):
         
         while(not self.element_exists(term="//div[@class=\"tpanelcss twidget dict-tpanelcss\"]", scrap_type=enum.ScrapType.XPATH)):
         # while(not self.element_exists(term=".tmenu", scrap_type=enum.ScrapType.CSS_SELECTOR, main_container="body")):
-            
+    
             try:
                 self.wait_blocker_ajax()
                 wait(self.driver, 5).until(
@@ -137,6 +137,22 @@ class WebappInternal(Base):
                 self.close_coin_screen()
             except TimeoutException:
                 print ("No coin screen window, continue...")
+
+            # "//div/span[text() = \"Выбор отделов\"]"
+            try:
+                self.wait_blocker_ajax()
+                otdel_window = wait(self.driver, 10).until(
+                    EC.visibility_of_element_located((By.XPATH, "//div/span[text() = \"Выбор отделов\"]"))
+                ) 
+                self.wait_blocker_ajax()
+                otdel_cross = self.driver.find_element_by_xpath("//label[contains(@class, \"tcheckbox twidget dict-tcheckbox\")]/input")
+                action = ActionChains(self.driver)
+                cross = lambda: action.move_to_element(otdel_window)
+                self.click(otdel_cross, click_type=enum.ClickType.SELENIUM)
+                self.SetButton(self.language.OkeyWordL)           
+            
+            except TimeoutException:
+                print ("No selection of department window, continue...")
 
             try:
                 self.wait_blocker_ajax()
@@ -147,7 +163,10 @@ class WebappInternal(Base):
                 self.SetButton (button = self.language.close)     # [Закрыть]
                 time.sleep(0.2)
                 try:
-                    self.SetButton (button = self.language.no)        # [Нет]
+                    if self.driver.find_element_by_xpath ("//div[contains(@class, \"tmodaldialog twidget borderless\")]"):
+                        self.SetButton (button = self.language.no)        # [Нет]
+                    else:
+                        pass
                 except:
                     pass
             except TimeoutException:
