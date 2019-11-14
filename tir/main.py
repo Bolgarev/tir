@@ -16,7 +16,6 @@ class Webapp():
     :param autostart: Sets whether TIR should open browser and execute from the start. - **Default:** True
     :type: bool
     """
-    
     __slots__ = ['__webapp', 'program']
     def __init__(self, config_path="", autostart=True):
         self.__webapp = WebappInternal(config_path, autostart)
