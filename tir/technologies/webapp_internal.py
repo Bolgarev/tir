@@ -391,14 +391,15 @@ class WebappInternal(Base):
         self.wait_element(self.language.database, main_container=container)
 
         print("Filling Date")
-        base_date = next(iter(self.web_scrap(term="[name='dDataBase'] input, [name='__dInfoData'] input", scrap_type=enum.ScrapType.CSS_SELECTOR, label=True, main_container=container)), None)
-        if base_date is None:
-            self.restart_counter += 1
-            self.log_error("Couldn't find Date input element.")
-        date = lambda: self.driver.find_element_by_xpath(xpath_soup(base_date))
-        self.double_click(date())
-        self.send_keys(date(), Keys.HOME)
-        self.send_keys(date(), self.config.date)
+        # test  jenkins
+        # base_date = next(iter(self.web_scrap(term="[name='dDataBase'] input, [name='__dInfoData'] input", scrap_type=enum.ScrapType.CSS_SELECTOR, label=True, main_container=container)), None)
+        # if base_date is None:
+        #     self.restart_counter += 1
+        #     self.log_error("Couldn't find Date input element.")
+        # date = lambda: self.driver.find_element_by_xpath(xpath_soup(base_date))
+        # self.double_click(date())
+        # self.send_keys(date(), Keys.HOME)
+        # self.send_keys(date(), self.config.date)
 
         print("Filling Group")
         group_element = next(iter(self.web_scrap(term="[name='cGroup'] input, [name='__cGroup'] input", scrap_type=enum.ScrapType.CSS_SELECTOR, label=True, main_container=container)), None)
