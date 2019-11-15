@@ -391,7 +391,6 @@ class WebappInternal(Base):
         self.wait_element(self.language.database, main_container=container)
 
         print("Filling Date")
-        # test  jenkins
         # base_date = next(iter(self.web_scrap(term="[name='dDataBase'] input, [name='__dInfoData'] input", scrap_type=enum.ScrapType.CSS_SELECTOR, label=True, main_container=container)), None)
         # if base_date is None:
         #     self.restart_counter += 1
@@ -400,42 +399,73 @@ class WebappInternal(Base):
         # self.double_click(date())
         # self.send_keys(date(), Keys.HOME)
         # self.send_keys(date(), self.config.date)
+        try:
+            date = wait(self.driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//div[@name = \"dDataBase\"]/input"))
+            )
+            # self.scroll_to_element(date)
+            act = ActionChains(self.driver)
+            act.move_to_element(date).perform()
+            self.click(date, click_type = enum.ClickType.SELENIUM)
+            self.send_keys(date, self.config.date)
+        except:
+            print ("Element field date not found")    
 
         print("Filling Group")
-        group_element = next(iter(self.web_scrap(term="[name='cGroup'] input, [name='__cGroup'] input", scrap_type=enum.ScrapType.CSS_SELECTOR, label=True, main_container=container)), None)
-        if group_element is None:
-            self.restart_counter += 1
-            self.log_error("Couldn't find Group input element.")
-        group = lambda: self.driver.find_element_by_xpath(xpath_soup(group_element))
-        self.double_click(group())
-        self.send_keys(group(), Keys.HOME)
-        self.send_keys(group(), self.config.group)
+        # group_element = next(iter(self.web_scrap(term="[name='cGroup'] input, [name='__cGroup'] input", scrap_type=enum.ScrapType.CSS_SELECTOR, label=True, main_container=container)), None)
+        # if group_element is None:
+        #     self.restart_counter += 1
+        #     self.log_error("Couldn't find Group input element.")
+        # group = lambda: self.driver.find_element_by_xpath(xpath_soup(group_element))
+        # self.double_click(group())
+        # self.send_keys(group(), Keys.HOME)
+        # self.send_keys(group(), self.config.group)
+        try:
+            group = wait(self.driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//div[@name = \"cGroup\"]/input"))
+            )
+            act = ActionChains(self.driver)
+            act.move_to_element(group).perform()
+            self.click(group, click_type = enum.ClickType.SELENIUM)
+            self.send_keys(group, self.config.group)
+        except:
+            print ("Element field group not found")  
 
         print("Filling Branch")
-        branch_element = next(iter(self.web_scrap(term="[name='cFil'] input, [name='__cFil'] input", scrap_type=enum.ScrapType.CSS_SELECTOR, label=True, main_container=container)), None)
-        if branch_element is None:
-            self.restart_counter += 1
-            self.log_error("Couldn't find Branch input element.")
-        branch = lambda: self.driver.find_element_by_xpath(xpath_soup(branch_element))
-        self.double_click(branch())
-        self.send_keys(branch(), Keys.HOME)
-        self.send_keys(branch(), self.config.branch)
+        # branch_element = next(iter(self.web_scrap(term="[name='cFil'] input, [name='__cFil'] input", scrap_type=enum.ScrapType.CSS_SELECTOR, label=True, main_container=container)), None)
+        # if branch_element is None:
+        #     self.restart_counter += 1
+        #     self.log_error("Couldn't find Branch input element.")
+        # branch = lambda: self.driver.find_element_by_xpath(xpath_soup(branch_element))
+        # self.double_click(branch())
+        # self.send_keys(branch(), Keys.HOME)
+        # self.send_keys(branch(), self.config.branch)
+        try:
+            group = wait(self.driver, 10).until(
+                EC.element_to_be_clickable((By.XPATH, "//div[@name = \"cFil\"]/input"))
+            )
+            act = ActionChains(self.driver)
+            act.move_to_element(group).perform()
+            self.click(group, click_type = enum.ClickType.SELENIUM)
+            self.send_keys(group, self.config.branch)
+        except:
+            print ("Element field group not found")
 
         print("Filling Environment")
-        environment_element = next(iter(self.web_scrap(term="[name='cAmb'] input", scrap_type=enum.ScrapType.CSS_SELECTOR, label=True, main_container=container)), None)
-        if environment_element is None:
-            self.restart_counter += 1
-            self.log_error("Couldn't find Module input element.")
-        env = lambda: self.driver.find_element_by_xpath(xpath_soup(environment_element))
-        if ("disabled" not in environment_element.parent.attrs["class"] and env().is_enabled()):
-            env_value = self.get_web_value(env())
-            endtime = time.time() + self.config.time_out
-            while (time.time() < endtime and env_value != self.config.module):
-                self.double_click(env())
-                self.send_keys(env(), Keys.HOME)
-                self.send_keys(env(), self.config.module)
-                env_value = self.get_web_value(env())
-                time.sleep(1)
+        # environment_element = next(iter(self.web_scrap(term="[name='cAmb'] input", scrap_type=enum.ScrapType.CSS_SELECTOR, label=True, main_container=container)), None)
+        # if environment_element is None:
+        #     self.restart_counter += 1
+        #     self.log_error("Couldn't find Module input element.")
+        # env = lambda: self.driver.find_element_by_xpath(xpath_soup(environment_element))
+        # if ("disabled" not in environment_element.parent.attrs["class"] and env().is_enabled()):
+        #     env_value = self.get_web_value(env())
+        #     endtime = time.time() + self.config.time_out
+        #     while (time.time() < endtime and env_value != self.config.module):
+        #         self.double_click(env())
+        #         self.send_keys(env(), Keys.HOME)
+        #         self.send_keys(env(), self.config.module)
+        #         env_value = self.get_web_value(env())
+        #         time.sleep(1)
 
         buttons = self.filter_displayed_elements(self.web_scrap(label, scrap_type=enum.ScrapType.MIXED, optional_term="button", main_container=container), True)
         button_element = next(iter(buttons), None)
