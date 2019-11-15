@@ -127,7 +127,7 @@ class WebappInternal(Base):
         self.user_screen()
         self.environment_screen()
         
-        while(not self.element_exists(term="//div[@class=\"tpanelcss twidget dict-tpanelcss\"]", scrap_type=enum.ScrapType.XPATH)):
+        while(not self.element_exists(term="//label[@title = \"Избранное \"]", scrap_type=enum.ScrapType.XPATH)):
         # while(not self.element_exists(term=".tmenu", scrap_type=enum.ScrapType.CSS_SELECTOR, main_container="body")):
     
             try:
