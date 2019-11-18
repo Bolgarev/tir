@@ -5018,6 +5018,7 @@ class WebappInternal(Base):
             act.key_down (Keys.LEFT_CONTROL)
             time.sleep(2)
             act.send_keys('q')
+            self.wait_blocker_ajax()
             act.key_up (Keys.LEFT_CONTROL).perform()
             
             wait(self.driver, 10).until(
@@ -5043,6 +5044,7 @@ class WebappInternal(Base):
             act.key_down (Keys.LEFT_CONTROL)
             time.sleep(2)
             act.send_keys('q')
+            self.wait_blocker_ajax()
             act.key_up (Keys.LEFT_CONTROL).perform()
             
             wait(self.driver, 10).until(
